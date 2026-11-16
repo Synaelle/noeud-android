@@ -2,10 +2,15 @@
 
 package com.synaelle.noeud
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.provider.Settings
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
@@ -138,10 +143,29 @@ class SettingsActivity : Activity() {
         }
         if (custom) customDelayField(state)
 
+        renderBattery()
         renderUpdates(state)
 
         section("About")
         paragraph("Noeud ${BuildConfig.VERSION_NAME}")
+    }
+
+    /** Some phones stop alarms and background syncs of apps under battery optimization. */
+    @SuppressLint("BatteryLife")
+    private fun renderBattery() {
+        section("Battery")
+        val power = getSystemService(PowerManager::class.java)
+        if (power.isIgnoringBatteryOptimizations(packageName)) {
+            paragraph("Battery optimization is off for Noeud.", ui.palette.text, 14)
+            return
+        }
+        paragraph("Battery optimization is on for Noeud.", ui.palette.text, 14)
+        val turnOff = ui.button("Turn off", Ui.Kind.OUTLINE) {
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")),
+            )
+        }
+        page.addView(ui.row(Gravity.START, turnOff).apply { setPadding(ui.dp(16), ui.dp(8), ui.dp(16), 0) })
     }
 
     private fun renderUpdates(state: State) {
