@@ -69,5 +69,5 @@ android {
 dependencies {
     testImplementation("junit:junit:4.13.2")
     // the platform's org.json is only a stub in JVM tests
-    testImplementation("org.json:json:20240303")
+    testImplementation("org.json:json:20260814")
 }
