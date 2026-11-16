@@ -6,7 +6,7 @@ plugins {
 // release build comes out unsigned.
 val keystoreFile: String? = System.getenv("NOEUD_KEYSTORE_FILE")
 
-val appVersion = "0.1.1"
+val appVersion = "0.1.2"
 
 android {
     namespace = "com.synaelle.noeud"
