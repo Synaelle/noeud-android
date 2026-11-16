@@ -1,0 +1,79 @@
+name: release
+
+# A tag vX.Y.Z builds the app, once the tag matches appVersion in app/build.gradle.kts, signs it
+# with the release key (the ANDROID_KEYSTORE, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD
+# secrets) and publishes it as a GitHub release with one APK. The app's updater looks for that
+# APK, noeud-X.Y.Z.apk, on the latest release.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: the tag matches the app's version
+        id: plan
+        run: |
+          set -eu
+          version=${GITHUB_REF_NAME#v}
+          app=$(sed -n 's/^val appVersion = "\(.*\)"$/\1/p' app/build.gradle.kts)
+          if [ "$version" != "$app" ]; then
+            echo "the tag says $version, app/build.gradle.kts says $app" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: android sdk
+        run: |
+          sdk="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdk" --licenses > /dev/null || true
+          "$sdk" --install "platforms;android-37.0" "build-tools;36.0.0" > /dev/null
+      - name: release signing key
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::error::the ANDROID_KEYSTORE, ANDROID_KEY_ALIAS or ANDROID_KEY_PASSWORD secret is missing"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE" | base64 -d > "$RUNNER_TEMP/release.jks"
+      - name: test and build
+        env:
+          NOEUD_KEYSTORE_FILE: ${{ runner.temp }}/release.jks
+          NOEUD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          NOEUD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon --console=plain testDebugUnitTest lintDebug assembleRelease
+      - name: check the signature
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          set -eu
+          mkdir -p release
+          cp app/build/outputs/apk/release/app-release.apk "release/noeud-$VERSION.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "release/noeud-$VERSION.apk"
+          rm -f "$RUNNER_TEMP/release.jks"
+      - name: publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "release/noeud-$VERSION.apk" \
+            --title "Noeud for Android $VERSION" \
+            --notes "How to install it: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY#installing"
