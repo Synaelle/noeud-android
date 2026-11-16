@@ -123,7 +123,6 @@ class SettingsActivity : Activity() {
         }
 
         section("Delay")
-        paragraph("How long Delay puts a reminder off, from a notification or the app.")
         val custom = state.delay !in delayChoices || customDelay.isNotBlank()
         choices(delayChoices.map { it to durationLabel(it) } + ("custom" to "Custom"), if (custom) "custom" else state.delay) { chosen ->
             if (chosen == "custom") {
@@ -137,10 +136,7 @@ class SettingsActivity : Activity() {
         if (custom) customDelayField(state)
 
         section("About")
-        paragraph(
-            "Noeud ${BuildConfig.VERSION_NAME}. Reminders that came due while the phone was off notify you when it " +
-                "starts again. Hanken Grotesk is under the SIL Open Font License, Lucide icons under the ISC license.",
-        )
+        paragraph("Noeud ${BuildConfig.VERSION_NAME}")
     }
 
     private fun customDelayField(state: State) {
@@ -220,10 +216,6 @@ class SettingsActivity : Activity() {
         section("Server")
         val server = state.server
         if (server == null) {
-            paragraph(
-                "Noeud works on its own and keeps your reminders on this phone. Add your Noeud server to share them " +
-                    "with your other devices and apps.",
-            )
             val address = ui.field("https://example.com/noeud").apply {
                 contentDescription = "Address"
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
@@ -251,7 +243,6 @@ class SettingsActivity : Activity() {
             }.apply { isEnabled = !busy }
             page.addView(labelled("Address", address))
             page.addView(labelled("Token", token))
-            paragraph("Make one on the server with noeud-server token create android.")
             page.addView(ui.row(Gravity.START, connectButton).apply { setPadding(ui.dp(16), ui.dp(8), ui.dp(16), 0) })
         } else {
             paragraph("Syncing with ${server.url} as ${server.name}.", ui.palette.text, 14)
@@ -289,7 +280,6 @@ class SettingsActivity : Activity() {
             if (changingToken) {
                 val token = tokenField("New token")
                 page.addView(labelled("New token", token))
-                paragraph("Made with noeud-server token regenerate ${server.name}.")
                 val use = ui.button("Use this token", Ui.Kind.PRIMARY) {
                     if (token.text.isBlank()) {
                         error = "Paste the new token."
@@ -306,7 +296,6 @@ class SettingsActivity : Activity() {
                 }.apply { isEnabled = !busy }
                 page.addView(ui.row(Gravity.START, use).apply { setPadding(ui.dp(16), ui.dp(8), ui.dp(16), 0) })
             }
-            paragraph("Disconnecting keeps every reminder on this phone. Connecting again sends them back.")
         }
         error?.let { paragraph(it, ui.palette.danger, 14).accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_ASSERTIVE }
     }
