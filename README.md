@@ -4,10 +4,11 @@
 
 <h1 align="center">Noeud for Android</h1>
 
-<p align="center">Simple reminders that notify you on your Android phone.</p>
+<p align="center">Simple, very light reminders that notify you on your Android phone.</p>
 
 # Features
 
+- Tiny: the whole app is smaller than a single photo taken with your phone, and it needs nothing else installed.
 - Works on its own, with no account and no server.
 - Type when as a duration like `8h52` or `7w1h3s`, a time like `18:00` or a day like `tomorrow 9:00`, and see exactly when it will notify you before adding it.
 - Notifies you on the minute, with Done and Delay right on the notification.
