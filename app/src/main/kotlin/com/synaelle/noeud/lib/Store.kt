@@ -63,6 +63,8 @@ class State {
     var theme = Theme.DARK
     var clock = Clock.H24
     var delay = DEFAULT_DELAY
+    /** Whether Noeud looks for a new version each time it starts. */
+    var checkUpdates = true
 }
 
 private fun JSONObject.text(key: String): String? = if (isNull(key)) null else optString(key)
@@ -101,6 +103,7 @@ fun State.toJson(): JSONObject = JSONObject()
     .put("theme", theme.stored)
     .put("clock", clock.stored)
     .put("delay", delay)
+    .put("check_updates", checkUpdates)
 
 private inline fun JSONObject.eachObject(key: String, action: (String, JSONObject) -> Unit) {
     val all = optJSONObject(key) ?: return
@@ -138,6 +141,7 @@ fun stateOf(json: JSONObject): State = State().apply {
     json.optJSONArray("summary")?.let { all -> summary = List(all.length()) { all.getString(it) } }
     theme = if (json.optString("theme") == Theme.LIGHT.stored) Theme.LIGHT else Theme.DARK
     clock = Clock.of(json.optString("clock"))
+    checkUpdates = json.opt("check_updates") != false
     delay = json.optString("delay").let { stored ->
         val read = readDelay(stored)
         if (read is DelayChoice.Ok) read.delay else DEFAULT_DELAY

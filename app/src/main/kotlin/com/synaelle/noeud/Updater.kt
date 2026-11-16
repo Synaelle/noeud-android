@@ -53,27 +53,47 @@ object Updater {
         setRequestProperty("User-Agent", "Noeud")
     }
 
-    /** Once per start of the app. Offline, or no newer release: nothing is shown. */
+    /** What a look for a new version found. */
+    sealed interface Check {
+        data class Found(val release: Release) : Check
+        data object Current : Check
+        data object Failed : Check
+    }
+
+    private fun fetch(): Check = try {
+        val release = latest()
+        if (release != null && newer(release.version, BuildConfig.VERSION_NAME)) Check.Found(release) else Check.Current
+    } catch (_: IOException) {
+        Check.Failed
+    } catch (_: JSONException) {
+        Check.Failed
+    }
+
+    /** Once per start of the app, unless turned off. Offline, or no newer release: nothing is shown. */
     fun checkOnce(activity: Activity, found: (Release) -> Unit) {
         if (checked) return
         checked = true
+        if (!Noeud.read(activity).checkUpdates) return
         Thread {
-            val release = try {
-                latest()
-            } catch (_: IOException) {
-                null
-            } catch (_: JSONException) {
-                null
-            }
-            if (release != null && newer(release.version, BuildConfig.VERSION_NAME)) main.post { found(release) }
+            val result = fetch()
+            if (result is Check.Found) main.post { found(result.release) }
         }.start()
     }
 
+    /** Looks now, from the settings, and says what it found. */
+    fun checkNow(done: (Check) -> Unit) {
+        Thread {
+            val result = fetch()
+            main.post { done(result) }
+        }.start()
+    }
+
+    /** The latest release, or null when it has no APK for Noeud. */
     private fun latest(): Release? {
         val connection = open(BuildConfig.RELEASES)
         try {
             connection.setRequestProperty("Accept", "application/vnd.github+json")
-            if (connection.responseCode != 200) return null
+            if (connection.responseCode != 200) throw IOException("GitHub answered ${connection.responseCode}")
             val body = JSONObject(connection.inputStream.use { it.readBytes().decodeToString() })
             val version = body.getString("tag_name").removePrefix("v")
             val assets = body.getJSONArray("assets")

@@ -41,6 +41,9 @@ class SettingsActivity : Activity() {
     private var changingToken = false
     private var error: String? = null
     private var customDelay = ""
+    private var checking = false
+    private var checked: Updater.Check? = null
+    private var installProblem: String? = null
     private val render: () -> Unit = { render() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -135,8 +138,47 @@ class SettingsActivity : Activity() {
         }
         if (custom) customDelayField(state)
 
+        renderUpdates(state)
+
         section("About")
         paragraph("Noeud ${BuildConfig.VERSION_NAME}")
+    }
+
+    private fun renderUpdates(state: State) {
+        section("Updates")
+        choices(listOf(true to "Automatic", false to "Manual"), state.checkUpdates) { chosen ->
+            change { it.checkUpdates = chosen }
+        }
+        val checkNow = ui.button(if (checking) "Checking…" else "Check now", Ui.Kind.OUTLINE) {
+            checking = true
+            checked = null
+            installProblem = null
+            render()
+            Updater.checkNow { result ->
+                checking = false
+                checked = result
+                render()
+            }
+        }.apply { isEnabled = !checking }
+        page.addView(ui.row(Gravity.START, checkNow).apply { setPadding(ui.dp(16), ui.dp(8), ui.dp(16), 0) })
+        val result = checked
+        val answer = when (result) {
+            is Updater.Check.Found -> paragraph("Noeud ${result.release.version} is available.", ui.palette.text, 14)
+            Updater.Check.Current -> paragraph("Noeud is up to date.", ui.palette.text, 14)
+            Updater.Check.Failed -> paragraph("GitHub could not be reached.", ui.palette.danger, 14)
+            null -> null
+        }
+        answer?.setPadding(ui.dp(16), ui.dp(12), ui.dp(16), ui.dp(4))
+        if (result is Updater.Check.Found) {
+            val install = ui.button("Install", Ui.Kind.PRIMARY) {
+                Updater.install(this, result.release) { problem ->
+                    installProblem = problem
+                    render()
+                }
+            }
+            page.addView(ui.row(Gravity.START, install).apply { setPadding(ui.dp(16), ui.dp(4), ui.dp(16), 0) })
+        }
+        installProblem?.let { paragraph(it, ui.palette.danger, 14) }
     }
 
     private fun customDelayField(state: State) {
