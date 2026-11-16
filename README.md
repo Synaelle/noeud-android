@@ -29,7 +29,11 @@ When a new version is out, Noeud shows it when it starts. Tap Install, and the f
 
 ## Syncing with your server
 
-Tap the gear, enter your [Noeud server](https://github.com/Synaelle/noeud)'s address and a token made for the app with `noeud-server token create android`, then tap Connect.
+Tap the gear, enter your [Noeud server](https://github.com/Synaelle/noeud)'s address and a token made for the app, then tap Connect. Make the token on the server, in the folder that holds Noeud's `compose.yml`:
+
+```sh
+docker compose exec server noeud-server token create android
+```
 
 # Building
 
