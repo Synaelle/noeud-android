@@ -1,0 +1,5 @@
+.atelier/
+.gradle/
+.kotlin/
+build/
+local.properties
