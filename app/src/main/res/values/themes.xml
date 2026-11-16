@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window around the screens, which draw themselves in code; the pickers take the accent. -->
+    <style name="Noeud.Dark" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:colorAccent">#E44C3E</item>
+        <item name="android:colorPrimary">#E44C3E</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:colorBackground">#161414</item>
+    </style>
+
+    <style name="Noeud.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bg_light</item>
+        <item name="android:colorAccent">#C1271B</item>
+        <item name="android:colorPrimary">#C1271B</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:colorBackground">#FBFAF7</item>
+    </style>
+</resources>
